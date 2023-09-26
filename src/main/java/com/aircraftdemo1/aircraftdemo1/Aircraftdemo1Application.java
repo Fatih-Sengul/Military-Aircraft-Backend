@@ -9,7 +9,7 @@ public class Aircraftdemo1Application {
     public static void main(String[] args) {
         SpringApplication.run(Aircraftdemo1Application.class, args);
         System.out.println("Herkese selam ");
-        System.out.println("Space Selam ");
+        System.out.println("Space Selam https://git.jetbrains.space/defensetechnologies/main/military_aircraft_demo_1.git");
 
     }
 
