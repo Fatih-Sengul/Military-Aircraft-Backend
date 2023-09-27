@@ -8,37 +8,47 @@ import java.util.Date;
 import java.util.List;
 
 @Entity
+@Table(name = "aircraft")
 public class Aircraft extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(name = "name",nullable = false)
+    @Basic(optional = false)
     @NotBlank
     @Size(max = 255)
-    private String aircraftName;
+    private String name;
 
+    @Column(name = "manufacturer")
     private String manufacturer;
+    @Column(name = "service_period")
     private String servicePeriod;
-    private String country;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
+    @Column(nullable = false)
+    private String countryOfOrigin;
 
+    @Column(name = "promo_page_url")
     private String promoPageURL;
 
-    @OneToMany(mappedBy = "aircraft")
-    private List<TechnicalSpecification> technicalSpecifications;
-
-    @OneToMany(mappedBy = "aircraft")
-    private List<AircraftImage> images;
-
-    @OneToMany(mappedBy = "aircraft")
-    private List<AircraftVideo> videos;
-
+    @Column
     @Temporal(TemporalType.DATE)
     private Date serviceStartDate;
 
     @Temporal(TemporalType.DATE)
     private Date serviceEndDate;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
+    @OneToMany(mappedBy = "aircraft", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TechnicalSpecification> technicalSpecifications;
+
+    @OneToMany(mappedBy = "aircraft", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AircraftImage> images;
+
+    @OneToMany(mappedBy = "aircraft", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AircraftVideo> videos;
+
+
 
 
 }

@@ -1,17 +1,13 @@
 package com.aircraftdemo1.aircraftdemo1.model;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 @Entity
+@Table(name = "technical_specification")
 public class TechnicalSpecification extends BaseEntity {
 
-    @ManyToOne
-    @JoinColumn(name = "aircraft_id", nullable = false)
-    private Aircraft aircraft;
+
 
     @Column(columnDefinition = "TEXT")
     private String armament;
@@ -21,6 +17,10 @@ public class TechnicalSpecification extends BaseEntity {
 
     private double speed;
     private double range;
+
+    @ManyToOne
+    @JoinColumn(name = "aircraft_id", nullable = false)
+    private Aircraft aircraft;
 
     // Getter ve setter metotları
 }
