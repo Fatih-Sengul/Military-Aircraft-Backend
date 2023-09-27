@@ -6,9 +6,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import lombok.*;
 
 @Entity
 @Table(name = "aircraft_image")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class AircraftImage extends BaseEntity {
 
 
@@ -23,5 +27,4 @@ public class AircraftImage extends BaseEntity {
     @JoinColumn(name = "aircraft_id", nullable = false)
     private Aircraft aircraft;
 
-    // Getter ve setter metotları
 }

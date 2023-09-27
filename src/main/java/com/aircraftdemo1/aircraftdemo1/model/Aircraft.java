@@ -47,8 +47,4 @@ public class Aircraft extends BaseEntity {
 
     @OneToMany(mappedBy = "aircraft", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AircraftVideo> videos;
-
-
-
-
 }
