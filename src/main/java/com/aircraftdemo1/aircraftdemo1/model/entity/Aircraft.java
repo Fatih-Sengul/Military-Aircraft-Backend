@@ -1,14 +1,21 @@
-package com.aircraftdemo1.aircraftdemo1.model;
+package com.aircraftdemo1.aircraftdemo1.model.entity;
 
+import com.aircraftdemo1.aircraftdemo1.model.common.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 import java.util.List;
 
 @Entity
 @Table(name = "aircraft")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Aircraft extends BaseEntity {
 
     @Column(name = "name",nullable = false)

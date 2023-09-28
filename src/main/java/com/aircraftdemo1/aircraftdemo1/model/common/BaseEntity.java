@@ -1,4 +1,4 @@
-package com.aircraftdemo1.aircraftdemo1.model;
+package com.aircraftdemo1.aircraftdemo1.model.common;
 
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedBy;

@@ -1,5 +1,6 @@
-package com.aircraftdemo1.aircraftdemo1.model;
+package com.aircraftdemo1.aircraftdemo1.model.entity;
 
+import com.aircraftdemo1.aircraftdemo1.model.common.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
