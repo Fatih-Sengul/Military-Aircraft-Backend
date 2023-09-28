@@ -22,5 +22,5 @@ public class CategoryResponseDTO {
     private Date lastModifiedDate;
     private String lastModifiedBy;
 
-    // Getter and setter methods...
+
 }
