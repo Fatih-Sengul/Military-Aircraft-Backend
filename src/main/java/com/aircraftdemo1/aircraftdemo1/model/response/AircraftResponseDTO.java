@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -24,8 +25,11 @@ public class AircraftResponseDTO {
     private Date serviceStartDate;
     private Date serviceEndDate;
     private Long categoryId;
-    private Date creationDate; // Oluşturma tarihini ekledik
-    private String createdBy; // Oluşturan kullanıcıyı ekledik
-    private Date lastModifiedDate; // Son güncelleme tarihini ekledik
-    private String lastModifiedBy; // Son güncelleyen kullanıcıyı ekledik
+    private Date creationDate;
+    private String createdBy;
+    private Date lastModifiedDate;
+    private String lastModifiedBy;
+    private List<TechnicalSpecificationResponseDTO> technicalSpecifications;
+    private List<AircraftImageResponseDTO> images;
+    private List<AircraftVideoResponseDTO> videos;
 }

@@ -1,63 +1,68 @@
 package com.aircraftdemo1.aircraftdemo1.service;
 
-
-import com.aircraftdemo1.aircraftdemo1.exception.ResourceNotFoundException;
+import com.aircraftdemo1.aircraftdemo1.converters.CategoryMapper;
+import com.aircraftdemo1.aircraftdemo1.model.dto.CategoryDto;
 import com.aircraftdemo1.aircraftdemo1.model.entity.Category;
-import com.aircraftdemo1.aircraftdemo1.model.request.CategoryRequestDTO;
-import com.aircraftdemo1.aircraftdemo1.model.response.CategoryResponseDTO;
 import com.aircraftdemo1.aircraftdemo1.repository.CategoryRepository;
-import org.modelmapper.ModelMapper;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 @Service
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
-    private final ModelMapper modelMapper;
+    private final CategoryMapper categoryMapper;
 
     @Autowired
-    public CategoryService(CategoryRepository categoryRepository, ModelMapper modelMapper) {
+    public CategoryService(CategoryRepository categoryRepository, CategoryMapper categoryMapper) {
         this.categoryRepository = categoryRepository;
-        this.modelMapper = modelMapper;
+        this.categoryMapper = categoryMapper;
     }
 
-    public List<CategoryResponseDTO> getAllCategories() {
-        List<Category> categories = categoryRepository.findAll();
-        return categories.stream()
-                .map(category -> modelMapper.map(category, CategoryResponseDTO.class))
-                .collect(Collectors.toList());
-    }
-
-    public CategoryResponseDTO getCategoryById(Long id) {
+    public CategoryDto getCategoryById(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Category not found"));
-        return modelMapper.map(category, CategoryResponseDTO.class);
+                .orElseThrow(() -> new EntityNotFoundException("Category not found with id: " + id));
+        return categoryMapper.entityToDto(category);
     }
 
-    public CategoryResponseDTO createCategory(CategoryRequestDTO requestDTO) {
-        Category category = modelMapper.map(requestDTO, Category.class);
+    public List<CategoryDto> getAllCategories() {
+        List<Category> categories = categoryRepository.findAll();
+
+        List<CategoryDto> categoryDtos = categories.stream()
+                .map(categoryMapper::entityToDto)
+                .collect(Collectors.toList());
+
+        return categoryDtos;
+    }
+
+
+    public CategoryDto createCategory(CategoryDto categoryDto) {
+        Category category = categoryMapper.dtoToEntity(categoryDto);
         Category savedCategory = categoryRepository.save(category);
-        return modelMapper.map(savedCategory, CategoryResponseDTO.class);
+        return categoryMapper.entityToDto(savedCategory);
     }
 
-    public CategoryResponseDTO updateCategory(Long id, CategoryRequestDTO requestDTO) {
+    public CategoryDto updateCategory(Long id, CategoryDto updatedCategoryDto) {
         Category existingCategory = categoryRepository.findById(id)
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Category not found"));
-        modelMapper.map(requestDTO, existingCategory);
-        Category updatedCategory = categoryRepository.save(existingCategory);
-        return modelMapper.map(updatedCategory, CategoryResponseDTO.class);
+                .orElseThrow(() -> new EntityNotFoundException("Category not found with id: " + id));
+        Category updatedCategory = categoryMapper.dtoToEntity(updatedCategoryDto);
+
+        // Tüm alanları güncelle
+        existingCategory.setCategoryName(updatedCategory.getCategoryName());
+        existingCategory.setCategoryDescription(updatedCategory.getCategoryDescription());
+
+        Category savedCategory = categoryRepository.save(existingCategory);
+        return categoryMapper.entityToDto(savedCategory);
     }
 
     public void deleteCategory(Long id) {
-        if (categoryRepository.existsById(id)) {
-            categoryRepository.deleteById(id);
-        } else {
-            throw ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Category not found");
-        }
+        categoryRepository.deleteById(id);
     }
 }
+
 

@@ -1,6 +1,7 @@
 package com.aircraftdemo1.aircraftdemo1.model.common;
 
 import jakarta.persistence.*;
+import lombok.Data;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -12,6 +13,7 @@ import java.util.Date;
 
 @EntityListeners(AuditingEntityListener.class)
 @MappedSuperclass
+@Data
 public abstract class BaseEntity implements Serializable {
 
     @Id
@@ -19,8 +21,8 @@ public abstract class BaseEntity implements Serializable {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "deleted",nullable = false)
-    private boolean deleted = false;
+//    @Column(name = "deleted",nullable = false)
+//    private boolean deleted = false;
 
 
     @Column(name = "created_at", nullable = false, updatable = false)

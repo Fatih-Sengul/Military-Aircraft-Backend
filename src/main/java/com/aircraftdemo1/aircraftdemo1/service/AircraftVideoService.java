@@ -1,13 +1,10 @@
 package com.aircraftdemo1.aircraftdemo1.service;
 
-import com.aircraftdemo1.aircraftdemo1.exception.ResourceNotFoundException;
-import com.aircraftdemo1.aircraftdemo1.model.entity.Aircraft;
+import com.aircraftdemo1.aircraftdemo1.converters.AircraftVideoMapper;
+import com.aircraftdemo1.aircraftdemo1.model.dto.AircraftVideoDto;
 import com.aircraftdemo1.aircraftdemo1.model.entity.AircraftVideo;
-import com.aircraftdemo1.aircraftdemo1.model.request.AircraftVideoRequestDTO;
-import com.aircraftdemo1.aircraftdemo1.model.response.AircraftVideoResponseDTO;
-import com.aircraftdemo1.aircraftdemo1.repository.AircraftRepository;
 import com.aircraftdemo1.aircraftdemo1.repository.AircraftVideoRepository;
-import org.modelmapper.ModelMapper;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,63 +13,52 @@ import java.util.stream.Collectors;
 
 @Service
 public class AircraftVideoService {
-
-    private final AircraftVideoRepository aircraftVideoRepository;
-    private final AircraftRepository aircraftRepository;
-    private final ModelMapper modelMapper;
+    private final AircraftVideoRepository videoRepository;
+    private final AircraftVideoMapper videoMapper;
 
     @Autowired
-    public AircraftVideoService(AircraftVideoRepository aircraftVideoRepository, AircraftRepository aircraftRepository, ModelMapper modelMapper) {
-        this.aircraftVideoRepository = aircraftVideoRepository;
-        this.aircraftRepository = aircraftRepository;
-        this.modelMapper = modelMapper;
+    public AircraftVideoService(AircraftVideoRepository videoRepository, AircraftVideoMapper videoMapper) {
+        this.videoRepository = videoRepository;
+        this.videoMapper = videoMapper;
     }
 
-    public List<AircraftVideoResponseDTO> getAllAircraftVideos() {
-        List<AircraftVideo> aircraftVideos = aircraftVideoRepository.findAll();
-        return aircraftVideos.stream()
-                .map(aircraftVideo -> modelMapper.map(aircraftVideo, AircraftVideoResponseDTO.class))
+    public List<AircraftVideoDto> getAllVideos() {
+        List<AircraftVideo> videos = videoRepository.findAll();
+        return videos.stream()
+                .map(videoMapper::entityToDto)
                 .collect(Collectors.toList());
     }
 
-    public AircraftVideoResponseDTO getAircraftVideoById(Long id) {
-        AircraftVideo aircraftVideo = aircraftVideoRepository.findById(id)
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("AircraftVideo not found"));
-        return modelMapper.map(aircraftVideo, AircraftVideoResponseDTO.class);
+
+
+
+    public AircraftVideoDto getVideoById(Long id) {
+        AircraftVideo video = videoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Aircraft Video not found with id: " + id));
+        return videoMapper.entityToDto(video);
     }
 
-    public AircraftVideoResponseDTO createAircraftVideo(AircraftVideoRequestDTO requestDTO) {
-        AircraftVideo aircraftVideo = modelMapper.map(requestDTO, AircraftVideo.class);
-
-        // Aircraft'i eklemek için aircraftId kullanarak ilgili uçağı alabiliriz
-        Aircraft aircraft = aircraftRepository.findById(requestDTO.getAircraftId())
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Aircraft not found"));
-
-        aircraftVideo.setAircraft(aircraft);
-        AircraftVideo savedAircraftVideo = aircraftVideoRepository.save(aircraftVideo);
-        return modelMapper.map(savedAircraftVideo, AircraftVideoResponseDTO.class);
+    public AircraftVideoDto createVideo(AircraftVideoDto videoDto) {
+        AircraftVideo video = videoMapper.dtoToEntity(videoDto);
+        video = videoRepository.save(video);
+        return videoMapper.entityToDto(video);
     }
 
-    public AircraftVideoResponseDTO updateAircraftVideo(Long id, AircraftVideoRequestDTO requestDTO) {
-        AircraftVideo existingAircraftVideo = aircraftVideoRepository.findById(id)
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("AircraftVideo not found"));
-        modelMapper.map(requestDTO, existingAircraftVideo);
+    public AircraftVideoDto updateVideo(Long id, AircraftVideoDto updatedVideoDto) {
+        AircraftVideo existingVideo = videoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Aircraft Video not found with id: " + id));
 
-        // Aircraft'i güncellemek için aircraftId kullanarak ilgili uçağı alabiliriz
-        Aircraft aircraft = aircraftRepository.findById(requestDTO.getAircraftId())
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Aircraft not found"));
+        // Tüm alanları güncelle
+        existingVideo.setVideoURL(updatedVideoDto.getVideoURL());
+        existingVideo.setVideoDescription(updatedVideoDto.getVideoDescription());
 
-        existingAircraftVideo.setAircraft(aircraft);
-        AircraftVideo updatedAircraftVideo = aircraftVideoRepository.save(existingAircraftVideo);
-        return modelMapper.map(updatedAircraftVideo, AircraftVideoResponseDTO.class);
+        AircraftVideo updatedVideo = videoRepository.save(existingVideo);
+        return videoMapper.entityToDto(updatedVideo);
     }
 
-    public void deleteAircraftVideo(Long id) {
-        if (aircraftVideoRepository.existsById(id)) {
-            aircraftVideoRepository.deleteById(id);
-        } else {
-            throw ResourceNotFoundException.fromChangeSetPersisterNotFoundException("AircraftVideo not found");
-        }
+    public void deleteVideo(Long id) {
+        AircraftVideo video = videoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Aircraft Video not found with id: " + id));
+        videoRepository.delete(video);
     }
 }
-

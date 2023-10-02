@@ -1,87 +1,108 @@
 package com.aircraftdemo1.aircraftdemo1.service;
 
 
-import com.aircraftdemo1.aircraftdemo1.exception.ResourceNotFoundException;
-import com.aircraftdemo1.aircraftdemo1.model.entity.Aircraft;
-import com.aircraftdemo1.aircraftdemo1.model.entity.Category;
-import com.aircraftdemo1.aircraftdemo1.model.request.AircraftRequestDTO;
-import com.aircraftdemo1.aircraftdemo1.model.response.AircraftResponseDTO;
+import com.aircraftdemo1.aircraftdemo1.converters.*;
+import com.aircraftdemo1.aircraftdemo1.model.dto.AircraftDto;
+import com.aircraftdemo1.aircraftdemo1.model.entity.*;
 import com.aircraftdemo1.aircraftdemo1.repository.AircraftRepository;
-import com.aircraftdemo1.aircraftdemo1.repository.CategoryRepository;
-import org.modelmapper.ModelMapper;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AircraftService {
 
     private final AircraftRepository aircraftRepository;
-    private final CategoryRepository categoryRepository;
-    private final ModelMapper modelMapper;
+    private final AircraftMapper aircraftMapper;
+    private final CategoryMapper categoryMapper;
+    private final TechnicalSpecificationMapper technicalSpecificationMapper;
+    private final AircraftImageMapper aircraftImageMapper;
+    private final AircraftVideoMapper aircraftVideoMapper;
 
     @Autowired
     public AircraftService(
             AircraftRepository aircraftRepository,
-            CategoryRepository categoryRepository,
-            ModelMapper modelMapper) {
+            AircraftMapper aircraftMapper,
+            CategoryMapper categoryMapper,
+            TechnicalSpecificationMapper technicalSpecificationMapper,
+            AircraftImageMapper aircraftImageMapper,
+            AircraftVideoMapper aircraftVideoMapper
+    ) {
         this.aircraftRepository = aircraftRepository;
-        this.categoryRepository = categoryRepository;
-        this.modelMapper = modelMapper;
+        this.aircraftMapper = aircraftMapper;
+        this.categoryMapper = categoryMapper;
+        this.technicalSpecificationMapper = technicalSpecificationMapper;
+        this.aircraftImageMapper = aircraftImageMapper;
+        this.aircraftVideoMapper = aircraftVideoMapper;
     }
 
+    public AircraftDto getAircraftById(Long aircraftId) {
+        Aircraft aircraft = aircraftRepository.findById(aircraftId)
+                .orElseThrow(() -> new EntityNotFoundException("Aircraft not found with id: " + aircraftId));
+        return aircraftMapper.entityToDto(aircraft);
+    }
 
-    public List<AircraftResponseDTO> getAllAircrafts() {
+    public List<AircraftDto> getAllAircraft() {
         List<Aircraft> aircraftList = aircraftRepository.findAll();
         return aircraftList.stream()
-                .map(aircraft -> modelMapper.map(aircraft, AircraftResponseDTO.class))
-                .toList();
+                .map(aircraftMapper::entityToDto)
+                .collect(Collectors.toList());
     }
 
-    public AircraftResponseDTO getAircraftById(Long id) {
-        Optional<Aircraft> aircraftOptional = aircraftRepository.findById(id);
-        if (aircraftOptional.isPresent()) {
-            Aircraft aircraft = aircraftOptional.get();
-            return modelMapper.map(aircraft, AircraftResponseDTO.class);
-        } else {
-            throw new ResourceNotFoundException("Aircraft not found with id: " + id);
-
-        }
+    public AircraftDto createAircraft(AircraftDto aircraftDto) {
+        Aircraft aircraft = aircraftMapper.dtoToEntity(aircraftDto);
+        Aircraft savedAircraft = aircraftRepository.save(aircraft);
+        return aircraftMapper.entityToDto(savedAircraft);
     }
 
-    public void createAircraft(AircraftRequestDTO requestDTO) {
-        Aircraft aircraft = modelMapper.map(requestDTO, Aircraft.class);
+    public AircraftDto updateAircraft(Long aircraftId, AircraftDto updatedAircraftDto) {
+        Aircraft existingAircraft = aircraftRepository.findById(aircraftId)
+                .orElseThrow(() -> new EntityNotFoundException("Aircraft not found with id: " + aircraftId));
 
-        // Category'yi eklemek için categoryId kullanarak ilgili kategoriyi alabiliriz
-        Category category = categoryRepository.findById(requestDTO.getCategoryId())
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Category not found"));
+        // Tüm alanları güncelle
+        existingAircraft.setName(updatedAircraftDto.getName());
+        existingAircraft.setManufacturer(updatedAircraftDto.getManufacturer());
+        existingAircraft.setServicePeriod(updatedAircraftDto.getServicePeriod());
+        existingAircraft.setCountryOfOrigin(updatedAircraftDto.getCountryOfOrigin());
+        existingAircraft.setPromoPageURL(updatedAircraftDto.getPromoPageURL());
+        existingAircraft.setServiceStartDate(updatedAircraftDto.getServiceStartDate());
+        existingAircraft.setServiceEndDate(updatedAircraftDto.getServiceEndDate());
+        existingAircraft.setCategory(categoryMapper.dtoToEntity(updatedAircraftDto.getCategory())); // Eğer kategori DTO'sunu entity'ye çevirmeniz gerekiyorsa
 
-        aircraft.setCategory(category);
-        aircraftRepository.save(aircraft);
+        // Teknik özellikleri güncelle
+        List<TechnicalSpecification> updatedSpecifications = updatedAircraftDto.getTechnicalSpecifications()
+                .stream()
+                .map(technicalSpecificationMapper::dtoToEntity)
+                .collect(Collectors.toList());
+        existingAircraft.setTechnicalSpecifications(updatedSpecifications);
+
+        // Resimleri güncelle
+        List<AircraftImage> updatedImages = updatedAircraftDto.getImages()
+                .stream()
+                .map(aircraftImageMapper::dtoToEntity)
+                .collect(Collectors.toList());
+        existingAircraft.setImages(updatedImages);
+
+        // Videoları güncelle
+        List<AircraftVideo> updatedVideos = updatedAircraftDto.getVideos()
+                .stream()
+                .map(aircraftVideoMapper::dtoToEntity)
+                .collect(Collectors.toList());
+        existingAircraft.setVideos(updatedVideos);
+
+        Aircraft updatedAircraft = aircraftRepository.save(existingAircraft);
+        return aircraftMapper.entityToDto(updatedAircraft);
     }
-    public void updateAircraft(Long id, AircraftRequestDTO requestDTO) {
-        Optional<Aircraft> aircraftOptional = aircraftRepository.findById(id);
-        if (aircraftOptional.isPresent()) {
-            Aircraft aircraft = aircraftOptional.get();
-            modelMapper.map(requestDTO, aircraft);
 
-            // Category'yi güncellemek için categoryId kullanarak ilgili kategoriyi alabiliriz
-            Category category = categoryRepository.findById(requestDTO.getCategoryId())
-                    .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Category not found"));
 
-            aircraft.setCategory(category);
-            aircraftRepository.save(aircraft);
-        } else {
-            throw ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Aircraft not found");
-        }
+    public void deleteAircraft(Long aircraftId) {
+        Aircraft aircraft = aircraftRepository.findById(aircraftId)
+                .orElseThrow(() -> new EntityNotFoundException("Aircraft not found with id: " + aircraftId));
+
+        // Silme işlemi
+        aircraftRepository.delete(aircraft);
     }
-    public void deleteAircraft(Long id) {
-        if (aircraftRepository.existsById(id)) {
-            aircraftRepository.deleteById(id);
-        } else {
-            throw ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Aircraft not found");
-        }
-    }
+
 }

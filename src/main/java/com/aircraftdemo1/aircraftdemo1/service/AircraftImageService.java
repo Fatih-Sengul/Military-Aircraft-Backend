@@ -1,13 +1,10 @@
 package com.aircraftdemo1.aircraftdemo1.service;
 
-import com.aircraftdemo1.aircraftdemo1.exception.ResourceNotFoundException;
-import com.aircraftdemo1.aircraftdemo1.model.entity.Aircraft;
+import com.aircraftdemo1.aircraftdemo1.converters.AircraftImageMapper;
+import com.aircraftdemo1.aircraftdemo1.model.dto.AircraftImageDto;
 import com.aircraftdemo1.aircraftdemo1.model.entity.AircraftImage;
-import com.aircraftdemo1.aircraftdemo1.model.request.AircraftImageRequestDTO;
-import com.aircraftdemo1.aircraftdemo1.model.response.AircraftImageResponseDTO;
 import com.aircraftdemo1.aircraftdemo1.repository.AircraftImageRepository;
-import com.aircraftdemo1.aircraftdemo1.repository.AircraftRepository;
-import org.modelmapper.ModelMapper;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,62 +13,50 @@ import java.util.stream.Collectors;
 
 @Service
 public class AircraftImageService {
-
-    private final AircraftImageRepository aircraftImageRepository;
-    private final AircraftRepository aircraftRepository;
-    private final ModelMapper modelMapper;
+    private final AircraftImageRepository imageRepository;
+    private final AircraftImageMapper imageMapper;
 
     @Autowired
-    public AircraftImageService(AircraftImageRepository aircraftImageRepository, AircraftRepository aircraftRepository, ModelMapper modelMapper) {
-        this.aircraftImageRepository = aircraftImageRepository;
-        this.aircraftRepository = aircraftRepository;
-        this.modelMapper = modelMapper;
+    public AircraftImageService(AircraftImageRepository imageRepository, AircraftImageMapper imageMapper) {
+        this.imageRepository = imageRepository;
+        this.imageMapper = imageMapper;
     }
 
-    public List<AircraftImageResponseDTO> getAllAircraftImages() {
-        List<AircraftImage> aircraftImages = aircraftImageRepository.findAll();
-        return aircraftImages.stream()
-                .map(aircraftImage -> modelMapper.map(aircraftImage, AircraftImageResponseDTO.class))
+    public List<AircraftImageDto> getAllImages() {
+        List<AircraftImage> images = imageRepository.findAll();
+        return images.stream()
+                .map(imageMapper::entityToDto)
                 .collect(Collectors.toList());
     }
 
-    public AircraftImageResponseDTO getAircraftImageById(Long id) {
-        AircraftImage aircraftImage = aircraftImageRepository.findById(id)
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("AircraftImage not found"));
-        return modelMapper.map(aircraftImage, AircraftImageResponseDTO.class);
+    public AircraftImageDto getImageById(Long id) {
+        AircraftImage image = imageRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Aircraft Image not found with id: " + id));
+        return imageMapper.entityToDto(image);
     }
 
-    public AircraftImageResponseDTO createAircraftImage(AircraftImageRequestDTO requestDTO) {
-        AircraftImage aircraftImage = modelMapper.map(requestDTO, AircraftImage.class);
-
-        // Aircraft'i eklemek için aircraftId kullanarak ilgili uçağı alabiliriz
-        Aircraft aircraft = aircraftRepository.findById(requestDTO.getAircraftId())
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Aircraft not found"));
-
-        aircraftImage.setAircraft(aircraft);
-        AircraftImage savedAircraftImage = aircraftImageRepository.save(aircraftImage);
-        return modelMapper.map(savedAircraftImage, AircraftImageResponseDTO.class);
+    public AircraftImageDto createImage(AircraftImageDto imageDto) {
+        AircraftImage image = imageMapper.dtoToEntity(imageDto);
+        image = imageRepository.save(image);
+        return imageMapper.entityToDto(image);
     }
 
-    public AircraftImageResponseDTO updateAircraftImage(Long id, AircraftImageRequestDTO requestDTO) {
-        AircraftImage existingAircraftImage = aircraftImageRepository.findById(id)
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("AircraftImage not found"));
-        modelMapper.map(requestDTO, existingAircraftImage);
+    public AircraftImageDto updateImage(Long id, AircraftImageDto updatedImageDto) {
+        AircraftImage existingImage = imageRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Aircraft Image not found with id: " + id));
 
-        // Aircraft'i güncellemek için aircraftId kullanarak ilgili uçağı alabiliriz
-        Aircraft aircraft = aircraftRepository.findById(requestDTO.getAircraftId())
-                .orElseThrow(() -> ResourceNotFoundException.fromChangeSetPersisterNotFoundException("Aircraft not found"));
+        existingImage.setImageURL(updatedImageDto.getImageURL());
+        existingImage.setImageDescription(updatedImageDto.getImageDescription());
 
-        existingAircraftImage.setAircraft(aircraft);
-        AircraftImage updatedAircraftImage = aircraftImageRepository.save(existingAircraftImage);
-        return modelMapper.map(updatedAircraftImage, AircraftImageResponseDTO.class);
+        AircraftImage updatedImage = imageRepository.save(existingImage);
+        return imageMapper.entityToDto(updatedImage);
     }
 
-    public void deleteAircraftImage(Long id) {
-        if (aircraftImageRepository.existsById(id)) {
-            aircraftImageRepository.deleteById(id);
-        } else {
-            throw ResourceNotFoundException.fromChangeSetPersisterNotFoundException("AircraftImage not found");
-        }
+    public void deleteImage(Long id) {
+        AircraftImage image = imageRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Aircraft Image not found with id: " + id));
+
+        imageRepository.delete(image);
     }
 }
+
